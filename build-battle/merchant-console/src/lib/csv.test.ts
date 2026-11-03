@@ -129,11 +129,11 @@ describe("parseExportOptions", () => {
     })
   })
 
-  it("accepts an explicit column list, in canonical order, without duplicates", () => {
+  it("accepts an explicit column list and drops duplicates", () => {
     expect(parse("columns=amount,id,amount&scope=all")).toEqual({
       ok: true,
       scope: "all",
-      columns: ["id", "amount"],
+      columns: ["amount", "id"],
     })
   })
 
@@ -181,5 +181,34 @@ describe("exportScopeLabel", () => {
 
   it("labels an unfiltered current view 'all'", () => {
     expect(exportScopeLabel("filtered", { status: "all" })).toBe("all")
+  })
+})
+
+describe("column selection (NWP-101)", () => {
+  const parse = (query: string) => parseExportOptions(new URLSearchParams(query))
+
+  it("exports a subset of columns in the order requested", () => {
+    const options = parse("columns=amount,id,status")
+    expect(options.ok && options.columns).toEqual(["amount", "id", "status"])
+    if (!options.ok) throw new Error(options.error)
+    expect(toCsv([payment], options.columns)).toBe(
+      ["amount,id,status", "$250.00,pay_0001,captured"].join("\n"),
+    )
+  })
+
+  it("excludes card last four when no columns are chosen", () => {
+    const options = parse("")
+    if (!options.ok) throw new Error(options.error)
+    expect(options.columns).not.toContain("last4")
+    const [header, row] = toCsv([payment], options.columns).split("\n")
+    expect(header.split(",")).not.toContain("last4")
+    expect(row).not.toContain("4242")
+  })
+
+  it("refuses an empty selection with a message ops can act on", () => {
+    expect(parse("columns=")).toEqual({
+      ok: false,
+      error: "Choose at least one column to export.",
+    })
   })
 })

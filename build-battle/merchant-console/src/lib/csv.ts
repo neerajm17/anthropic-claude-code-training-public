@@ -46,8 +46,9 @@ function isExportColumn(value: string): value is ExportColumn {
  *
  * `columns` is a comma-separated list. When absent, the defaults apply; when
  * present, every name must be on the allowlist and at least one must be
- * given. Duplicates are dropped and the canonical column order is kept, so
- * the file layout does not depend on the order the client sent.
+ * given. Columns are written in the order the client sent them, so ops can
+ * match a merchant's or Finance's template; duplicates keep their first
+ * position.
  */
 export function parseExportOptions(params: URLSearchParams): ExportOptions {
   const rawScope = params.get("scope") ?? "filtered"
@@ -73,7 +74,7 @@ export function parseExportOptions(params: URLSearchParams): ExportOptions {
     return { ok: false, error: "Unknown export column requested." }
   }
 
-  const columns = EXPORT_COLUMNS.filter((column) => requested.includes(column))
+  const columns = [...new Set(requested)] as ExportColumn[]
   return { ok: true, columns, scope }
 }
 
