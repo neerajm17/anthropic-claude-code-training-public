@@ -121,9 +121,11 @@ export function toCsv(
 
 /**
  * The scope part of an export filename, built only from allowlisted values:
- * the parsed status, a merchant id that exists, or "all". Free-text search
- * never reaches the filename, so a filtered export with only a search is
- * labelled "filtered".
+ * the parsed status, a merchant id that exists, "filtered", or "all".
+ *
+ * Search text, dates, and unknown merchant ids never reach the filename, but
+ * they still narrow the rows, so they add "filtered" rather than letting a
+ * subset be named "all".
  */
 export function exportScopeLabel(
   scope: ExportScope,
@@ -133,11 +135,18 @@ export function exportScopeLabel(
 
   const parts: string[] = []
   if (filters.status && filters.status !== "all") parts.push(filters.status)
-  if (filters.merchantId && merchantById(filters.merchantId)) {
-    parts.push(filters.merchantId.replace(/_/g, "-"))
-  }
-  if (parts.length > 0) return parts.join("-")
-  return filters.search?.trim() ? "filtered" : "all"
+  const knownMerchant =
+    filters.merchantId !== undefined && merchantById(filters.merchantId)
+  if (knownMerchant) parts.push(filters.merchantId!.replace(/_/g, "-"))
+
+  const narrowedOtherwise = Boolean(
+    filters.search?.trim() ||
+      filters.from ||
+      filters.to ||
+      (filters.merchantId && !knownMerchant),
+  )
+  if (narrowedOtherwise) parts.push("filtered")
+  return parts.length > 0 ? parts.join("-") : "all"
 }
 
 /** `payments-<scope>-<UTC date>.csv`, e.g. `payments-disputed-2026-08-13.csv`. */

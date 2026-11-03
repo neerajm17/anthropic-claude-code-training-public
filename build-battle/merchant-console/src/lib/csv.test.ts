@@ -170,13 +170,30 @@ describe("exportScopeLabel", () => {
     expect(exportScopeLabel("filtered", { status: "captured", merchantId: "mch_01" })).toBe(
       "captured-mch-01",
     )
+    // An unknown merchant still narrows the rows (to none), so the file is
+    // not "all", and the raw id never reaches the filename.
     expect(
       exportScopeLabel("filtered", { merchantId: '"; evil=1' }),
-    ).toBe("all")
+    ).toBe("filtered")
   })
 
   it("never puts free-text search into the filename", () => {
     expect(exportScopeLabel("filtered", { search: "../../etc" })).toBe("filtered")
+  })
+
+  it("never labels a date-range export 'all'", () => {
+    expect(exportScopeLabel("filtered", { from: "2026-10-01T00:00:00.000Z" })).toBe(
+      "filtered",
+    )
+    expect(
+      exportScopeLabel("filtered", { status: "disputed", to: "2026-10-31T23:59:59.999Z" }),
+    ).toBe("disputed-filtered")
+  })
+
+  it("marks a status export that is also searched as filtered", () => {
+    expect(exportScopeLabel("filtered", { status: "disputed", search: "acme" })).toBe(
+      "disputed-filtered",
+    )
   })
 
   it("labels an unfiltered current view 'all'", () => {

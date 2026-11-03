@@ -93,7 +93,8 @@ export function ExportDialog({ filterQuery }: { filterQuery: string }) {
 
   const toggle = (column: ExportColumn, checked: boolean) =>
     setColumns((previous) =>
-      // Keep canonical order so the file layout is predictable.
+      // The server writes columns in the order sent; the dialog always sends
+      // the canonical order so the file layout is predictable.
       EXPORT_COLUMNS.filter((c) =>
         c === column ? checked : previous.includes(c),
       ),
@@ -162,28 +163,29 @@ export function ExportDialog({ filterQuery }: { filterQuery: string }) {
           </fieldset>
 
           <fieldset>
-            <div className="flex items-baseline justify-between">
-              <legend className="text-sm font-medium text-gray-900 dark:text-gray-50">
-                Columns
-              </legend>
-              <div className="flex gap-3 text-xs">
-                <button
-                  type="button"
-                  className="text-blue-600 hover:underline dark:text-blue-500"
-                  onClick={() => setColumns([...DEFAULT_EXPORT_COLUMNS])}
-                >
-                  Defaults
-                </button>
-                <button
-                  type="button"
-                  className="text-blue-600 hover:underline dark:text-blue-500"
-                  onClick={() => setColumns([])}
-                >
-                  Clear
-                </button>
-              </div>
+            {/* The legend stays the fieldset's first child so it names the group. */}
+            <legend className="float-left text-sm font-medium text-gray-900 dark:text-gray-50">
+              Columns
+            </legend>
+            <div className="flex justify-end gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                className="px-2 py-0.5 text-xs"
+                onClick={() => setColumns([...DEFAULT_EXPORT_COLUMNS])}
+              >
+                Defaults
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="px-2 py-0.5 text-xs"
+                onClick={() => setColumns([])}
+              >
+                Clear
+              </Button>
             </div>
-            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="clear-both mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {EXPORT_COLUMNS.map((column) => (
                 <label
                   key={column}
